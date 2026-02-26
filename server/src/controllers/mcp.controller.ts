@@ -6,16 +6,16 @@
 /*   By: morgane <morgane@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/25 17:26:10 by morgane           #+#    #+#             */
-/*   Updated: 2026/02/26 09:42:07 by morgane          ###   ########.fr       */
+/*   Updated: 2026/02/26 10:44:00 by morgane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { getAvailabilities, getPrices, getPricesCurrents, getRoomDetails } from "../services/thais.service.js";
-import { getRoomTypes } from "../services/thais.service.js";
+import { getAvailabilities, getPrices, getPricesCurrents, getRoomTypes, getRates } from "../services/thais.service.js";
 import { AvailabilityEntry } from "../types/AvailabilityEntry.js";
 import { CurrentPrices } from "../types/CurrentPrices.js";
 import { RoomType } from "../types/RoomType.js";
 import { Prices } from "../types/Prices.js";
+import { Rate } from "../types/Rate.js";
 
 type RoomDetailsResponse = {
     room: RoomType;
@@ -88,7 +88,7 @@ function formatRoomAvailability(
     if (!ok) return `NO ${room.label} (durée de séjour non compatible : minimum ${minNights} nuits)\n`;
 
     const priceTotal = calcTotalPrice(pricesByRoom);
-    return `YES ${room.label} — ${priceTotal}€. Offre standard (petit-déjeuner inclus, taxe de séjour disponible sur demande)\n`;
+    return `YES ${room.label} — tarif moyen ${priceTotal}€. Offre standard (petit-déjeuner inclus, taxe de séjour disponible sur demande — tarif et disponibilité à confirmer selon le nombre de personnes)\n`;
 }
 
 export async function checkAvailability(from: string, to: string, adults: number): Promise<string | undefined> {
@@ -114,7 +114,7 @@ export async function checkAvailability(from: string, to: string, adults: number
 
         for (const roomId in roomTypeMap) {
             const room = roomTypeMap[roomId];
-            if (room.nb_persons_max >= adults) {
+            if (room.nb_persons_max >= adults && room.nb_persons_min <= adults) {
                 const pricesByRoom = allPrices.filter(p => p.room_type_id === room.id && p.date >= from && p.date < to);
                 result += formatRoomAvailability(room, availabilityByRoom[room.id], pricesByRoom, stayDuration, to);
             }
@@ -138,8 +138,12 @@ export async function checkRoomDetails(
         const room = roomTypes.find(r => r.label === label);
         if (!room) throw new Error(`Room "${label}" not found`);
 
+        const allRates = await getRates();
+        const rate = allRates.find(r => r.nb_adults_min <= adults && r.nb_adults_max >= adults);
+        if (!rate) return `Aucun tarif disponible pour ${adults} adultes.`;
+
         const stayDuration = calculStayDuration(from, to);
-        const prices = await getPrices(from, to, room.id, adults);
+        const prices = await getPrices(from, to, room.id, adults, rate.id);
 
         if (!prices.status) return `Chambre "${label}" non disponible : ${JSON.stringify(prices.messages)}`;
 

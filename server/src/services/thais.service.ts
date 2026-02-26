@@ -6,7 +6,7 @@
 /*   By: morgane <morgane@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/25 17:26:22 by morgane           #+#    #+#             */
-/*   Updated: 2026/02/26 08:52:12 by morgane          ###   ########.fr       */
+/*   Updated: 2026/02/26 10:45:50 by morgane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@ import { RoomType } from "../types/RoomType.js";
 import { AvailabilityEntry } from "../types/AvailabilityEntry.js";
 import { CurrentPrices } from "../types/CurrentPrices.js";
 import { Prices } from "../types/Prices.js";
+import { Rate } from "../types/Rate.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -87,25 +88,30 @@ export async function getRoomTypes(): Promise<RoomType[]> {
 export async function getRoomDetails(room_type_id: number): Promise<RoomType> {
     const roomType = await getRoomTypes();
 
-    const room_details = roomType.find((r: RoomType) => r.id === room_type_id);
-    if (!room_details) throw new Error(`Room "${room_type_id}" not found`);
+    const roomDetails = roomType.find((r: RoomType) => r.id === room_type_id);
+    if (!roomDetails) throw new Error(`Room "${room_type_id}" not found`);
 
-    return room_details;
+    return roomDetails;
 }
 
-export async function getPrices(from: string, to: string, room_type_id: number, adults: number): Promise<Prices> {
+export async function getPrices(
+    from: string,
+    to: string,
+    room_type_id: number,
+    adults: number,
+    rate_id: number,
+): Promise<Prices> {
     try {
         const token = await getToken();
         const response = await fetch(
-            `${BASE_URL}/api/partner/hotel/pricing?from=${from}&to=${to}&room_type_id=${room_type_id}&adults=${adults}&rate_id=1`,
+            `${BASE_URL}/api/partner/hotel/pricing?from=${from}&to=${to}&room_type_id=${room_type_id}&adults=${adults}&rate_id=${rate_id}`,
             {
                 method: "GET",
                 headers: { "Authorization": `Bearer ${token}` },
             },
         );
-
         const data = (await response.json()) as Prices;
-        if (!data) throw new Error("Prices nod found in json response");
+        if (!data) throw new Error("Prices not found in json response");
         return data;
     } catch (err) {
         console.error("Prices error:", err);
@@ -123,11 +129,31 @@ export async function getPricesCurrents(from: string, to: string): Promise<Curre
         const data = (await response.json()) as CurrentPrices[];
         if (!data) throw new Error("Current prices nod found in json response");
 
-        const standard_offer = data.filter((entry: CurrentPrices) => entry.rate_id === 1);
+        const standardOffer = data.filter((entry: CurrentPrices) => entry.rate_id === 1);
 
-        return standard_offer;
+        return standardOffer;
     } catch (error) {
         console.error("Prices error: ", error);
         throw error;
+    }
+}
+
+export async function getRates(): Promise<Rate[]> {
+    try {
+        const token = await getToken();
+        const response = await fetch(`${BASE_URL}/api/partner/hotel/rates`, {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = (await response.json()) as Rate[];
+
+        if (!data) throw new Error("Rates not found in json response");
+        const allRates = data.filter(r => !r.deleted && r.public && r.subject_to_pricing);
+
+        return allRates;
+    } catch (err) {
+        console.error("Rates error:", err);
+        throw err;
     }
 }
