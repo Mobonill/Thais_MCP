@@ -6,7 +6,7 @@
 /*   By: morgane <morgane@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/25 17:26:42 by morgane           #+#    #+#             */
-/*   Updated: 2026/02/26 10:00:40 by morgane          ###   ########.fr       */
+/*   Updated: 2026/02/26 15:44:00 by morgane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,9 +21,7 @@ app.get("/mcp", () => ({ status: "mcp endpoint up (POST only)" }));
 
 app.post("/mcp", async (req, reply) => {
     const server = createMCPServer();
-    const transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: undefined,
-    });
+    const transport = new StreamableHTTPServerTransport();
 
     try {
         await server.connect(transport);

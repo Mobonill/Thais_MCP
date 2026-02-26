@@ -6,7 +6,7 @@
 /*   By: morgane <morgane@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/25 17:26:10 by morgane           #+#    #+#             */
-/*   Updated: 2026/02/26 12:26:04 by morgane          ###   ########.fr       */
+/*   Updated: 2026/02/26 16:25:11 by morgane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -97,7 +97,13 @@ function formatRoomAvailability(
     return `YES ${room.label} — tarif moyen ${priceTotal}€. Offre standard (petit-déjeuner inclus, taxe de séjour disponible sur demande — tarif et disponibilité à confirmer selon le nombre de personnes)\n`;
 }
 
-export async function checkAvailability(from: string, to: string, adults: number): Promise<string | undefined> {
+export async function checkAvailability(
+    from: string,
+    to: string,
+    adults: number,
+    children: number | null,
+    infants: number | null,
+): Promise<string | undefined> {
     try {
         const availability = await getAvailabilities(from, to);
         if (!availability) return undefined;
@@ -116,11 +122,17 @@ export async function checkAvailability(from: string, to: string, adults: number
             roomTypeMap[room.id] = room;
         }
 
-        let result = `\n\nDisponibilités du ${from} au ${to} pour ${adults} adultes :\n\n`;
+        const totalPersons = adults + (children ?? 0);
+        const infantsModality =
+            infants && infants > 0
+                ? "\nN'hésitez pas à nous contacter par téléphone pour connaître les modalités de réservation avec un bébé.\n"
+                : "";
+
+        let result = `\n\nDisponibilités du ${from} au ${to} pour ${adults} adultes${children ? ` et ${children} enfant(s)` : ""} :\n\n${infantsModality}`;
 
         for (const roomId in roomTypeMap) {
             const room = roomTypeMap[roomId];
-            if (room.nb_persons_max >= adults && room.nb_persons_min <= adults) {
+            if (room.nb_persons_max >= totalPersons && room.nb_persons_min <= totalPersons) {
                 const pricesByRoom = allPrices.filter(p => p.room_type_id === room.id && p.date >= from && p.date < to);
                 result += formatRoomAvailability(room, availabilityByRoom[room.id], pricesByRoom, stayDuration, to);
             }
@@ -138,21 +150,22 @@ export async function checkRoomDetails(
     to: string,
     label: string,
     adults: number,
+    children: number = 0,
 ): Promise<RoomDetailsResponse | string> {
     try {
         const roomTypes = await getRoomTypes();
         const room = roomTypes.find(r => r.label === label);
         if (!room) throw new Error(`Room "${label}" not found`);
 
+        const totalPersons = adults + children;
         const allRates = await getRates();
-        const rate = allRates.find(r => r.nb_adults_min <= adults && r.nb_adults_max >= adults);
-        if (!rate) return `Aucun tarif disponible pour ${adults} adultes.`;
+        const rate = allRates.find(r => r.nb_persons_min <= totalPersons && r.nb_persons_max >= totalPersons);
+        if (!rate) return `Aucun tarif disponible pour ${totalPersons} personnes.`;
 
         const stayDuration = calculStayDuration(from, to);
         const prices = await getPrices(from, to, room.id, adults, rate.id);
 
         if (!prices.status) return `Chambre "${label}" non disponible : ${JSON.stringify(prices.messages)}`;
-
         if (prices.min_stay > stayDuration)
             return `Chambre "${label}" non disponible : durée minimum ${prices.min_stay} nuits.`;
 
@@ -184,6 +197,7 @@ export async function createEReservation(
     to: string,
     room_label: string,
     adults: number,
+    children: number = 0,
     civility: string,
     customer_firstname: string,
     customer_lastname: string,
@@ -194,9 +208,10 @@ export async function createEReservation(
         const room = roomTypes.find(r => r.label === room_label);
         if (!room) return `Chambre "${room_label}" introuvable.`;
 
+        const totalPersons = adults + children;
         const allRates = await getRates();
-        const rate = allRates.find(r => r.nb_adults_min <= adults && r.nb_adults_max >= adults);
-        if (!rate) return `Aucun tarif disponible pour ${adults} adultes.`;
+        const rate = allRates.find(r => r.nb_persons_min <= totalPersons && r.nb_persons_max >= totalPersons);
+        if (!rate) return `Aucun tarif disponible pour ${totalPersons} personnes.`;
 
         const result = await createReservation({
             checkin: from,
@@ -213,8 +228,8 @@ export async function createEReservation(
                     room_type_id: room.id,
                     rate_id: rate.id,
                     nb_persons: {
-                        adults: adults,
-                        children: 0,
+                        adults,
+                        children,
                     },
                 },
             ],
@@ -223,6 +238,6 @@ export async function createEReservation(
         return `Réservation créée avec succès : ${JSON.stringify(result)}`;
     } catch (error) {
         console.error(error);
-        return "Erreur lors de la création de la réservation.";
+        return "Error: could not create an e-reservation";
     }
 }
