@@ -6,16 +6,22 @@
 /*   By: morgane <morgane@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/25 17:26:10 by morgane           #+#    #+#             */
-/*   Updated: 2026/02/26 10:44:00 by morgane          ###   ########.fr       */
+/*   Updated: 2026/02/26 12:26:04 by morgane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { getAvailabilities, getPrices, getPricesCurrents, getRoomTypes, getRates } from "../services/thais.service.js";
+import {
+    getAvailabilities,
+    getPrices,
+    getPricesCurrents,
+    getRoomTypes,
+    getRates,
+    createReservation,
+} from "../services/thais.service.js";
 import { AvailabilityEntry } from "../types/AvailabilityEntry.js";
 import { CurrentPrices } from "../types/CurrentPrices.js";
 import { RoomType } from "../types/RoomType.js";
 import { Prices } from "../types/Prices.js";
-import { Rate } from "../types/Rate.js";
 
 type RoomDetailsResponse = {
     room: RoomType;
@@ -163,5 +169,60 @@ export async function checkRoomDetails(
     } catch (error) {
         console.error(error);
         return "Error: could not recover room details";
+    }
+}
+
+const CIVILITIES: Record<string, number> = {
+    "M.": 2,
+    "M. ou Mme": 1,
+    "Mme.": 3,
+    "Sté": 4,
+};
+
+export async function createEReservation(
+    from: string,
+    to: string,
+    room_label: string,
+    adults: number,
+    civility: string,
+    customer_firstname: string,
+    customer_lastname: string,
+    customer_email: string,
+): Promise<string> {
+    try {
+        const roomTypes = await getRoomTypes();
+        const room = roomTypes.find(r => r.label === room_label);
+        if (!room) return `Chambre "${room_label}" introuvable.`;
+
+        const allRates = await getRates();
+        const rate = allRates.find(r => r.nb_adults_min <= adults && r.nb_adults_max >= adults);
+        if (!rate) return `Aucun tarif disponible pour ${adults} adultes.`;
+
+        const result = await createReservation({
+            checkin: from,
+            checkout: to,
+            customer_civility_id: CIVILITIES[civility] ?? 1,
+            customer_firstname,
+            customer_lastname,
+            customer_email,
+            channel_name: "Partner",
+            payment_amount: 0,
+            insurance_amount: 0,
+            booking_rooms: [
+                {
+                    room_type_id: room.id,
+                    rate_id: rate.id,
+                    nb_persons: {
+                        adults: adults,
+                        children: 0,
+                    },
+                },
+            ],
+        });
+
+        return `Réservation créée avec succès : ${JSON.stringify(result)}`;
+    } catch (error) {
+        console.error(error);
+        return "Erreur lors de la création de la réservation.";
     }
 }

@@ -6,7 +6,7 @@
 /*   By: morgane <morgane@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/25 17:26:22 by morgane           #+#    #+#             */
-/*   Updated: 2026/02/26 10:45:50 by morgane          ###   ########.fr       */
+/*   Updated: 2026/02/26 12:25:34 by morgane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@ import { AvailabilityEntry } from "../types/AvailabilityEntry.js";
 import { CurrentPrices } from "../types/CurrentPrices.js";
 import { Prices } from "../types/Prices.js";
 import { Rate } from "../types/Rate.js";
+import { EReservationPayload } from "../types/EReservationPayload.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -85,15 +86,6 @@ export async function getRoomTypes(): Promise<RoomType[]> {
     }
 }
 
-export async function getRoomDetails(room_type_id: number): Promise<RoomType> {
-    const roomType = await getRoomTypes();
-
-    const roomDetails = roomType.find((r: RoomType) => r.id === room_type_id);
-    if (!roomDetails) throw new Error(`Room "${room_type_id}" not found`);
-
-    return roomDetails;
-}
-
 export async function getPrices(
     from: string,
     to: string,
@@ -154,6 +146,27 @@ export async function getRates(): Promise<Rate[]> {
         return allRates;
     } catch (err) {
         console.error("Rates error:", err);
+        throw err;
+    }
+}
+
+export async function createReservation(payload: EReservationPayload): Promise<unknown> {
+    try {
+        const token = await getToken();
+        const response = await fetch(`${BASE_URL}/api/partner/hotel/ebookings`, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        });
+
+        const data = await response.text();
+        if (!data) throw new Error("EReservation response empty");
+        return data;
+    } catch (err) {
+        console.error("EReservation error:", err);
         throw err;
     }
 }

@@ -6,39 +6,20 @@
 /*   By: morgane <morgane@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/25 17:26:45 by morgane           #+#    #+#             */
-/*   Updated: 2026/02/26 08:30:21 by morgane          ###   ########.fr       */
+/*   Updated: 2026/02/26 12:24:40 by morgane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { checkAvailability, checkRoomDetails } from "./controllers/mcp.controller.js";
+import { checkAvailability, checkRoomDetails, createEReservation } from "./controllers/mcp.controller.js";
 import { getRoomTypes } from "./services/thais.service.js";
-// import { RoomType } from "./types/RoomType.js";
 
 export default function createMCPServer() {
     const server = new McpServer({
         name: "thais-hotel",
         version: "1.0.0",
     });
-
-    server.registerTool(
-        "thais_get_room_details",
-        {
-            description:
-                "TOUJOURS appeler cet outil quand l'utilisateur demande des détails, informations, équipements, prix ou caractéristiques d'une chambre spécifique.",
-            inputSchema: {
-                checkIn: z.string().describe("Date d'arrivée YYYY-MM-DD"),
-                checkOut: z.string().describe("Date de départ YYYY-MM-DD"),
-                label: z.string().describe("Nom exact de la chambre, ex: 'Triple', 'Suite', 'Chambre double'"),
-                adults: z.number().describe("Nombre total de personnes"),
-            },
-        },
-        async ({ checkIn, checkOut, label, adults }) => {
-            const result = await checkRoomDetails(checkIn, checkOut, label, adults);
-            return { content: [{ type: "text", text: JSON.stringify(result) }] };
-        },
-    );
 
     server.registerTool(
         "thais_check_availability",
@@ -84,6 +65,73 @@ export default function createMCPServer() {
             content: [{ type: "text", text: result }],
         };
     });
+
+    server.registerTool(
+        "thais_get_room_details",
+        {
+            description:
+                "TOUJOURS appeler cet outil quand l'utilisateur demande des détails, informations, équipements, prix ou caractéristiques d'une chambre spécifique.",
+            inputSchema: {
+                checkIn: z.string().describe("Date d'arrivée YYYY-MM-DD"),
+                checkOut: z.string().describe("Date de départ YYYY-MM-DD"),
+                label: z.string().describe("Nom exact de la chambre, ex: 'Triple', 'Suite', 'Chambre double'"),
+                adults: z.number().describe("Nombre total de personnes"),
+            },
+        },
+        async ({ checkIn, checkOut, label, adults }) => {
+            const result = await checkRoomDetails(checkIn, checkOut, label, adults);
+            return { content: [{ type: "text", text: JSON.stringify(result) }] };
+        },
+    );
+
+    server.registerTool(
+        "thais_create_e_reservation",
+        {
+            description:
+                "Créer une e-réservation. À utiliser uniquement quand l'utilisateur confirme explicitement qu'il veut réserver.",
+            inputSchema: {
+                checkIn: z.string().describe("Date d'arrivée YYYY-MM-DD"),
+                checkOut: z.string().describe("Date de départ YYYY-MM-DD"),
+                room_label: z.string().describe("Nom exact de la chambre, ex: 'Triple', 'Suite'"),
+                adults: z.number().describe("Nombre total de personnes"),
+                civility: z.enum(["M.", "Mme.", "M. ou Mme", "Sté"]).describe("Civilité du client"),
+                customer_firstname: z.string().describe("Prénom du client"),
+                customer_lastname: z.string().describe("Nom du client"),
+                customer_email: z.string().describe("Email du client"),
+            },
+        },
+        async ({
+            checkIn,
+            checkOut,
+            room_label,
+            adults,
+            civility,
+            customer_firstname,
+            customer_lastname,
+            customer_email,
+        }: {
+            checkIn: string;
+            checkOut: string;
+            room_label: string;
+            adults: number;
+            civility: "M." | "Mme." | "M. ou Mme" | "Sté";
+            customer_firstname: string;
+            customer_lastname: string;
+            customer_email: string;
+        }) => {
+            const result = await createEReservation(
+                checkIn,
+                checkOut,
+                room_label,
+                adults,
+                civility,
+                customer_firstname,
+                customer_lastname,
+                customer_email,
+            );
+            return { content: [{ type: "text", text: result }] };
+        },
+    );
 
     return server;
 }
