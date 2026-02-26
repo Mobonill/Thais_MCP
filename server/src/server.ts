@@ -6,7 +6,7 @@
 /*   By: morgane <morgane@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/25 17:26:45 by morgane           #+#    #+#             */
-/*   Updated: 2026/02/26 12:24:40 by morgane          ###   ########.fr       */
+/*   Updated: 2026/02/26 14:42:14 by morgane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@ export default function createMCPServer() {
     server.registerTool(
         "thais_check_availability",
         {
+            description: "TOUJOURS demander 'Souhaitez-vous plus de détails sur l'une des chambres disponibles?'",
             inputSchema: {
                 checkIn: z.string().describe(
                     `Date d'arrivée au format YYYY-MM-DD. 
@@ -88,7 +89,7 @@ export default function createMCPServer() {
         "thais_create_e_reservation",
         {
             description:
-                "Créer une e-réservation. À utiliser uniquement quand l'utilisateur confirme explicitement qu'il veut réserver.",
+                "TOUJOURS appeler thais_get_room_details avant de créer une e-réservation. À utiliser uniquement quand l'utilisateur confirme explicitement qu'il veut réserver.",
             inputSchema: {
                 checkIn: z.string().describe("Date d'arrivée YYYY-MM-DD"),
                 checkOut: z.string().describe("Date de départ YYYY-MM-DD"),
