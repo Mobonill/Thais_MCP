@@ -68,3 +68,15 @@ Then add `Forwarding section` in ChatGPT's MCP settings.
 - **Zod** — Tool parameter validation
 - **TypeScript**
 - **ngrok** — Expose local server to ChatGPT
+
+
+____________________________________________________________________________________________________
+
+# Agent bonus
+
+A CLI conversational agent which connects GPT 4-o to the MCP server by LangChain
+
+Start the agent:
+```bash
+npm run agent
+```

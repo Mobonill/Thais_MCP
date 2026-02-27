@@ -6,14 +6,14 @@
 /*   By: morgane <morgane@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/25 17:26:45 by morgane           #+#    #+#             */
-/*   Updated: 2026/02/26 16:47:35 by morgane          ###   ########.fr       */
+/*   Updated: 2026/02/26 20:34:13 by morgane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
-import { checkAvailability, checkRoomDetails, createEReservation } from "./controllers/mcp.controller.js";
+import { checkAvailability, checkRoomDetails, createEReservation } from "./services/booking.service.js";
 import { getRoomTypes } from "./services/thais.service.js";
 
 export default function createMCPServer() {
