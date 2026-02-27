@@ -6,7 +6,7 @@
 /*   By: morgane <morgane@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/25 17:26:22 by morgane           #+#    #+#             */
-/*   Updated: 2026/02/27 10:43:40 by morgane          ###   ########.fr       */
+/*   Updated: 2026/02/27 13:59:49 by morgane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,7 @@ export async function getAvailabilities(from: string, to: string): Promise<Avail
                 headers: { "Authorization": `Bearer ${token}` },
             },
         );
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
 
         const data = (await response.json()) as AvailabilityEntry[];
         if (!data) throw new Error("Availabilities not found in json response");
@@ -47,6 +48,8 @@ export async function getRoomTypes(): Promise<RoomType[]> {
             method: "GET",
             headers: { "Authorization": `Bearer ${token}` },
         });
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+
         const data = (await response.json()) as RoomType[];
         if (!data) throw new Error("Room types nod found in json response");
 
@@ -77,6 +80,8 @@ export async function getPrices(
                 headers: { "Authorization": `Bearer ${token}` },
             },
         );
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+
         const data = (await response.json()) as Prices;
         if (!data) throw new Error("Prices not found in json response");
         return data;
@@ -93,6 +98,8 @@ export async function getPricesCurrents(from: string, to: string): Promise<Curre
             method: "GET",
             headers: { "Authorization": `Bearer ${token}` },
         });
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+
         const data = (await response.json()) as CurrentPrices[];
         if (!data) throw new Error("Current prices nod found in json response");
 
@@ -112,6 +119,7 @@ export async function getRates(): Promise<Rate[]> {
             method: "GET",
             headers: { Authorization: `Bearer ${token}` },
         });
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
 
         const data = (await response.json()) as Rate[];
 
@@ -136,6 +144,8 @@ export async function createReservation(payload: EReservationPayload): Promise<u
             },
             body: JSON.stringify(payload),
         });
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+
 
         const data = await response.text();
         if (!data) throw new Error("EReservation response empty");
