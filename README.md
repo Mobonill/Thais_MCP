@@ -80,3 +80,17 @@ Start the agent:
 ```bash
 npm run agent
 ```
+
+### How it works:
+1. Analyzes the question
+2. Calls an MCP tool (`thais_check_availability`, etc.)
+3. Reads the result
+4. Decides if another call is needed
+5. Formulates the final answer
+
+### Stack
+
+- **LangChain** — agent orchestration
+- **@langchain/mcp-adapters** — MCP server connection
+- **GPT-4o** — language model
+- **LangSmith** — observability and call tracing
