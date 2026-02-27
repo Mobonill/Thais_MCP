@@ -6,7 +6,7 @@
 /*   By: morgane <morgane@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/25 17:26:22 by morgane           #+#    #+#             */
-/*   Updated: 2026/02/26 12:25:34 by morgane          ###   ########.fr       */
+/*   Updated: 2026/02/27 10:43:40 by morgane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,37 +16,12 @@ import { CurrentPrices } from "../types/CurrentPrices.js";
 import { Prices } from "../types/Prices.js";
 import { Rate } from "../types/Rate.js";
 import { EReservationPayload } from "../types/EReservationPayload.js";
-import dotenv from "dotenv";
-dotenv.config();
-
-const BASE_URL = process.env.THAIS_BASE_URL;
-const USERNAME = process.env.THAIS_USERNAME;
-const PASSWORD = process.env.THAIS_PASSWORD;
-
-export async function getToken(): Promise<string> {
-    try {
-        const response = await fetch(`${BASE_URL}/api/partner/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                username: USERNAME,
-                password: PASSWORD,
-            }),
-        });
-
-        const data = (await response.json()) as { token: string };
-        if (!data || !data.token) throw new Error("Token not found in response");
-
-        return data.token;
-    } catch (err) {
-        console.error("Availability error:", err);
-        throw err;
-    }
-}
+import { tokenManager } from "../utils/token.manager.js";
+import { BASE_URL } from "../config/config.js";
 
 export async function getAvailabilities(from: string, to: string): Promise<AvailabilityEntry[]> {
     try {
-        const token = await getToken();
+        const token = await tokenManager.getToken();
         const response = await fetch(
             `${BASE_URL}/api/partner/hotel/apr/availabilities/currents?from=${from}&to=${to}`,
             {
@@ -67,7 +42,7 @@ export async function getAvailabilities(from: string, to: string): Promise<Avail
 
 export async function getRoomTypes(): Promise<RoomType[]> {
     try {
-        const token = await getToken();
+        const token = await tokenManager.getToken();
         const response = await fetch(`${BASE_URL}/api/partner/hotel/room-types`, {
             method: "GET",
             headers: { "Authorization": `Bearer ${token}` },
@@ -94,7 +69,7 @@ export async function getPrices(
     rate_id: number,
 ): Promise<Prices> {
     try {
-        const token = await getToken();
+        const token = await tokenManager.getToken();
         const response = await fetch(
             `${BASE_URL}/api/partner/hotel/pricing?from=${from}&to=${to}&room_type_id=${room_type_id}&adults=${adults}&rate_id=${rate_id}`,
             {
@@ -113,7 +88,7 @@ export async function getPrices(
 
 export async function getPricesCurrents(from: string, to: string): Promise<CurrentPrices[]> {
     try {
-        const token = await getToken();
+        const token = await tokenManager.getToken();
         const response = await fetch(`${BASE_URL}/api/partner/hotel/apr/prices/currents?from=${from}&to=${to}`, {
             method: "GET",
             headers: { "Authorization": `Bearer ${token}` },
@@ -132,7 +107,7 @@ export async function getPricesCurrents(from: string, to: string): Promise<Curre
 
 export async function getRates(): Promise<Rate[]> {
     try {
-        const token = await getToken();
+        const token = await tokenManager.getToken();
         const response = await fetch(`${BASE_URL}/api/partner/hotel/rates`, {
             method: "GET",
             headers: { Authorization: `Bearer ${token}` },
@@ -152,7 +127,7 @@ export async function getRates(): Promise<Rate[]> {
 
 export async function createReservation(payload: EReservationPayload): Promise<unknown> {
     try {
-        const token = await getToken();
+        const token = await tokenManager.getToken();
         const response = await fetch(`${BASE_URL}/api/partner/hotel/ebookings`, {
             method: "POST",
             headers: {
