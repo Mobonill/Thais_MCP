@@ -6,7 +6,7 @@
 /*   By: morgane <morgane@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/25 17:26:42 by morgane           #+#    #+#             */
-/*   Updated: 2026/02/26 15:44:00 by morgane          ###   ########.fr       */
+/*   Updated: 2026/02/27 11:07:44 by morgane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,5 +32,5 @@ app.post("/mcp", async (req, reply) => {
 });
 
 app.listen({ port: 3000, host: "0.0.0.0" }, () => {
-    console.log("Serveur démarré sur http://localhost:3000");
+    console.log("Server started at http://localhost:3000");
 });
